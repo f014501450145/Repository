@@ -3,28 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TSMC Dual-Mode Pump Construction Tracking System</title>
     <link rel="stylesheet" href="styles.css">
+    <title>TSMC Dual-Mode Pump Construction Tracking System</title>
+    <script src="script.js"></script>
 </head>
 <body>
     <header>
         <h1>TSMC Dual-Mode Pump Construction Tracking System</h1>
     </header>
     <main>
-        <section>
-            <h2>Overview</h2>
-            <p>This system is designed to track the construction and deployment of dual-mode pumps for TSMC.</p>
+        <section id="tracking">
+            <h2>Tracking Information</h2>
+            <p>Details about the construction progress and status of the pumps...</p>
         </section>
-        <section>
-            <h2>Features</h2>
-            <ul>
-                <li>Real-time tracking of construction progress</li>
-                <li>Data analytics and reporting</li>
-                <li>User-friendly interface</li>
-            </ul>
+        <section id="interactive">
+            <h2>Interactive Features</h2>
+            <button id="updateButton">Update Tracking</button>
+            <div id="output"></div>
         </section>
-        <footer>
-            <p>&copy; 2026 TSMC. All rights reserved.</p>
-        </footer>
+    </main>
+    <footer>
+        <p>&copy; 2026 TSMC</p>
+    </footer>
+    <script>
+        document.getElementById('updateButton').addEventListener('click', function() {
+            document.getElementById('output').innerText = 'Tracking updated!';
+        });
+    </script>
 </body>
 </html>
