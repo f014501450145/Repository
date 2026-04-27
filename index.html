@@ -3,7 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>台積電雙模幫浦工程管理系統</title>
+<title>台積電雙模幫浦工程管理系統 - 雲端旗艦版</title>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=Share+Tech+Mono&display=swap');
 
@@ -27,509 +31,107 @@
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', sans-serif; font-size: 13px; min-height: 100vh; }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Noto Sans TC', sans-serif;
-    font-size: 13px;
-    min-height: 100vh;
-  }
-
-  /* ── TOP BAR ── */
-  .topbar {
-    position: sticky; top: 0; z-index: 100;
-    height: var(--header-h);
-    background: linear-gradient(90deg, #060c1a 0%, #0a1628 60%, #040a14 100%);
-    border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 20px;
-    box-shadow: 0 2px 20px rgba(0,212,255,0.08);
-  }
+  /* --- TOP BAR --- */
+  .topbar { position: sticky; top: 0; z-index: 100; height: var(--header-h); background: linear-gradient(90deg, #060c1a 0%, #0a1628 60%, #040a14 100%); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; box-shadow: 0 2px 20px rgba(0,212,255,0.08); }
   .topbar-left { display: flex; align-items: center; gap: 14px; }
-  .logo-badge {
-    background: var(--accent2);
-    color: #fff;
-    font-weight: 900;
-    font-size: 11px;
-    padding: 4px 10px;
-    letter-spacing: 2px;
-    clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
-  }
+  .logo-badge { background: var(--accent2); color: #fff; font-weight: 900; font-size: 11px; padding: 4px 10px; letter-spacing: 2px; clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%); }
   .sys-title { font-size: 15px; font-weight: 700; color: var(--accent); letter-spacing: 1px; }
-  .sys-sub { font-size: 11px; color: var(--text-dim); }
-  .tab-nav { display: flex; gap: 2px; }
-  .tab-btn {
-    padding: 8px 20px;
-    background: transparent;
-    border: 1px solid transparent;
-    color: var(--text-dim);
-    cursor: pointer;
-    font-family: 'Noto Sans TC', sans-serif;
-    font-size: 13px;
-    font-weight: 500;
-    border-radius: 4px 4px 0 0;
-    transition: all .2s;
-  }
-  .tab-btn:hover { color: var(--accent); border-color: var(--border); }
-  .tab-btn.active {
-    background: var(--surface2);
-    color: var(--accent);
-    border-color: var(--border);
-    border-bottom-color: var(--surface2);
-  }
+  .sync-indicator { font-size: 10px; padding: 2px 8px; border-radius: 10px; border: 1px solid var(--border); display: flex; align-items: center; gap: 5px; }
+  .sync-online { color: var(--green); border-color: var(--green); }
+  .sync-offline { color: var(--red); border-color: var(--red); }
 
-  /* ── LAYOUT ── */
+  /* --- NAVIGATION --- */
+  .tab-nav { display: flex; gap: 2px; }
+  .tab-btn { padding: 8px 20px; background: transparent; border: 1px solid transparent; color: var(--text-dim); cursor: pointer; font-size: 13px; font-weight: 500; transition: all .2s; }
+  .tab-btn.active { background: var(--surface2); color: var(--accent); border-color: var(--border); border-bottom-color: var(--surface2); }
+
+  /* --- LAYOUT --- */
   .page { display: none; padding: 16px 20px; }
   .page.active { display: block; }
-
-  /* ── SECTION HEADER ── */
-  .sec-header {
-    display: flex; align-items: center; gap: 12px;
-    margin-bottom: 14px;
-  }
-  .sec-header h2 { font-size: 16px; font-weight: 700; color: var(--accent); }
-  .sec-line { flex: 1; height: 1px; background: linear-gradient(90deg, var(--border), transparent); }
-
-  /* ── FILTER BAR ── */
-  .filter-bar {
-    display: flex; gap: 10px; flex-wrap: wrap;
-    margin-bottom: 14px; align-items: center;
-  }
-  .filter-bar label { font-size: 12px; color: var(--text-dim); }
-  .filter-bar select, .filter-bar input {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-family: 'Noto Sans TC', sans-serif;
-  }
-  .btn {
-    padding: 6px 16px;
-    border-radius: 4px;
-    border: none;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 600;
-    font-family: 'Noto Sans TC', sans-serif;
-    transition: all .15s;
-  }
-  .btn-primary { background: var(--accent2); color: #fff; }
-  .btn-primary:hover { background: #0077ee; }
-  .btn-sm { padding: 4px 10px; font-size: 11px; }
-  .btn-danger { background: var(--red-bg); color: var(--red); border: 1px solid var(--red); }
-  .btn-danger:hover { background: #5a0018; }
-  .btn-success { background: var(--green-bg); color: var(--green); border: 1px solid var(--green); }
-  .btn-success:hover { background: #005a2a; }
-  .btn-warn { background: var(--yellow-bg); color: var(--yellow); border: 1px solid var(--yellow); }
-
-  /* ── SUMMARY CARDS ── */
   .summary-row { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
-  .s-card {
-    flex: 1; min-width: 120px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 12px 16px;
-    position: relative; overflow: hidden;
-  }
-  .s-card::before {
-    content: '';
-    position: absolute; top: 0; left: 0; right: 0; height: 2px;
-  }
+  .s-card { flex: 1; min-width: 120px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 12px 16px; position: relative; }
+  .s-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
   .s-card.blue::before { background: var(--accent); }
   .s-card.green::before { background: var(--green); }
-  .s-card.red::before { background: var(--red); }
-  .s-card.yellow::before { background: var(--yellow); }
-  .s-card .s-num { font-family: 'Share Tech Mono', monospace; font-size: 28px; font-weight: 700; }
+  .s-num { font-family: 'Share Tech Mono', monospace; font-size: 28px; font-weight: 700; }
   .s-card.blue .s-num { color: var(--accent); }
   .s-card.green .s-num { color: var(--green); }
-  .s-card.red .s-num { color: var(--red); }
-  .s-card.yellow .s-num { color: var(--yellow); }
-  .s-card .s-label { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
 
-  /* ── TABLE ── */
+  /* --- TABLE --- */
   .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
   table { width: 100%; border-collapse: collapse; min-width: 1100px; }
-  thead tr {
-    background: linear-gradient(180deg, #0f1e35 0%, #0a1628 100%);
-    border-bottom: 2px solid var(--accent2);
-  }
-  thead th {
-    padding: 10px 8px;
-    text-align: center;
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--accent);
-    letter-spacing: .5px;
-    white-space: nowrap;
-    border-right: 1px solid var(--border);
-  }
-  thead th:last-child { border-right: none; }
-  tbody tr {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    transition: background .15s;
-  }
-  tbody tr:hover { background: var(--surface2); }
-  tbody tr.row-green { background: #001a0d; }
-  tbody tr.row-green:hover { background: #002a15; }
-  tbody tr.row-red { background: #1a0009; }
-  tbody tr.row-red:hover { background: #280010; }
-  tbody td {
-    padding: 7px 8px;
-    text-align: center;
-    border-right: 1px solid rgba(30,58,95,0.5);
-    vertical-align: middle;
-  }
-  tbody td:last-child { border-right: none; }
+  thead tr { background: #0f1e35; border-bottom: 2px solid var(--accent2); }
+  th { padding: 10px 8px; font-size: 11px; color: var(--accent); border-right: 1px solid var(--border); }
+  tbody tr { background: var(--surface); border-bottom: 1px solid var(--border); }
+  tbody td { padding: 7px 8px; text-align: center; border-right: 1px solid rgba(30,58,95,0.5); }
 
-  /* ── PUMP ID ── */
-  .pump-id {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 13px;
-    color: var(--accent);
-    font-weight: 700;
-  }
-
-  /* ── PROGRESS CELL ── */
-  .prog-cell { min-width: 72px; }
-  .prog-bar-wrap {
-    height: 5px; background: #1e3a5f; border-radius: 3px; margin-top: 3px;
-  }
-  .prog-bar { height: 100%; border-radius: 3px; transition: width .3s; }
-  .prog-val { font-size: 11px; font-weight: 600; }
-
-  /* ── ITEM CHECK ── */
-  .check-wrap { display: flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer; }
-  .check-box {
-    width: 16px; height: 16px;
-    border: 1.5px solid var(--border);
-    border-radius: 3px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 10px;
-    transition: all .15s;
-    flex-shrink: 0;
-  }
+  /* --- UI COMPONENTS --- */
+  .check-box { width: 16px; height: 16px; border: 1.5px solid var(--border); border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
   .check-box.done { background: var(--green-bg); border-color: var(--green); color: var(--green); }
-  .check-box.empty { background: var(--surface2); }
+  .btn { padding: 6px 16px; border-radius: 4px; border: none; cursor: pointer; font-size: 12px; font-weight: 600; }
+  .btn-primary { background: var(--accent2); color: #fff; }
+  .btn-danger { background: var(--red-bg); color: var(--red); border: 1px solid var(--red); }
+  
+  .defect-tag { display: inline-flex; align-items: center; gap: 4px; background: var(--red-bg); color: var(--red); border: 1px solid var(--red); border-radius: 3px; padding: 2px 6px; font-size: 10px; margin: 1px; }
 
-  /* ── STATUS BADGE ── */
-  .status-badge {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 3px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: .5px;
-  }
-  .badge-done { background: var(--green-bg); color: var(--green); border: 1px solid var(--green); }
-  .badge-wip { background: #1a2a1a; color: #88cc44; border: 1px solid #446622; }
-  .badge-defect { background: var(--red-bg); color: var(--red); border: 1px solid var(--red); }
-  .badge-pending { background: var(--surface2); color: var(--text-dim); border: 1px solid var(--border); }
-
-  /* ── DEFECT CELL ── */
-  .defect-cell { min-width: 140px; text-align: left; }
-  .defect-tag {
-    display: inline-flex; align-items: center; gap: 4px;
-    background: var(--red-bg);
-    color: var(--red);
-    border: 1px solid var(--red);
-    border-radius: 3px;
-    padding: 2px 6px;
-    font-size: 10px;
-    margin: 1px;
-    cursor: pointer;
-  }
-  .defect-tag .del-x { opacity: .6; font-size: 10px; }
-  .defect-tag .del-x:hover { opacity: 1; }
-  .add-defect-btn {
-    display: inline-flex; align-items: center; gap: 3px;
-    background: transparent;
-    border: 1px dashed var(--red);
-    color: var(--red);
-    border-radius: 3px;
-    padding: 2px 6px;
-    font-size: 10px;
-    cursor: pointer;
-    opacity: .7;
-  }
-  .add-defect-btn:hover { opacity: 1; background: var(--red-bg); }
-
-  /* ── NOTE CELL ── */
-  .note-cell { min-width: 120px; text-align: left; }
-  .note-text {
-    font-size: 11px; color: var(--text-mid);
-    white-space: pre-wrap; word-break: break-all;
-    max-height: 60px; overflow: hidden;
-    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
-  }
-  .note-edit-btn {
-    display: inline-block;
-    font-size: 10px; color: var(--accent2);
-    cursor: pointer; margin-top: 2px;
-    background: none; border: none; padding: 0;
-    font-family: 'Noto Sans TC', sans-serif;
-  }
-  .note-edit-btn:hover { color: var(--accent); text-decoration: underline; }
-
-  /* ── MODAL ── */
-  .modal-overlay {
-    display: none;
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,.75);
-    z-index: 200;
-    align-items: center; justify-content: center;
-  }
+  /* --- MODAL --- */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.75); z-index: 200; align-items: center; justify-content: center; }
   .modal-overlay.show { display: flex; }
-  .modal {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 24px;
-    min-width: 360px;
-    max-width: 500px;
-    width: 90%;
-    box-shadow: 0 8px 40px rgba(0,0,0,.6);
-  }
-  .modal h3 { font-size: 15px; color: var(--accent); margin-bottom: 16px; }
-  .modal textarea, .modal input[type=text] {
-    width: 100%;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 8px 10px;
-    border-radius: 4px;
-    font-size: 13px;
-    font-family: 'Noto Sans TC', sans-serif;
-    resize: vertical;
-  }
-  .modal textarea { min-height: 100px; }
-  .modal-btns { display: flex; gap: 8px; margin-top: 14px; justify-content: flex-end; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 24px; width: 90%; max-width: 450px; }
+  textarea, input { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 8px; border-radius: 4px; width: 100%; }
 
-  /* ── DAILY LOG ── */
-  .daily-section { margin-bottom: 20px; }
-  .daily-section h3 { font-size: 13px; color: var(--text-mid); margin-bottom: 8px; }
-  .log-entry {
-    background: var(--surface2);
-    border-left: 3px solid var(--accent2);
-    padding: 8px 12px;
-    margin-bottom: 6px;
-    border-radius: 0 4px 4px 0;
-    font-size: 12px;
-  }
-  .log-entry .log-ts { font-size: 10px; color: var(--text-dim); font-family: 'Share Tech Mono', monospace; }
-  .log-entry .log-text { margin-top: 2px; color: var(--text); }
-  .log-form { display: flex; gap: 8px; margin-top: 8px; }
-  .log-form input {
-    flex: 1;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 7px 10px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-family: 'Noto Sans TC', sans-serif;
-  }
-  .date-picker-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-  .date-picker-wrap input[type=date] {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-family: 'Share Tech Mono', monospace;
-  }
+  /* --- WEEKLY TABLE --- */
+  .week-table { width: 100%; border-collapse: collapse; background: var(--surface); }
+  .week-table th, .week-table td { border: 1px solid var(--border); padding: 10px; vertical-align: top; }
+  .task-item { background: var(--surface2); border-left: 3px solid var(--accent2); padding: 5px; margin-bottom: 5px; font-size: 11px; display: flex; justify-content: space-between; }
 
-  /* ── WEEKLY SCHEDULE ── */
-  .week-header {
-    display: flex; align-items: center; gap: 12px;
-    margin-bottom: 16px; flex-wrap: wrap;
-  }
-  .week-nav { display: flex; gap: 4px; align-items: center; }
-  .week-nav button {
-    background: var(--surface2); border: 1px solid var(--border);
-    color: var(--text); padding: 5px 12px; border-radius: 4px;
-    cursor: pointer; font-size: 12px;
-  }
-  .week-nav button:hover { border-color: var(--accent); color: var(--accent); }
-  .week-label { font-family: 'Share Tech Mono', monospace; font-size: 13px; color: var(--accent); min-width: 180px; text-align: center; }
-  .week-table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
-  .week-table { width: 100%; border-collapse: collapse; min-width: 900px; }
-  .week-table th {
-    background: #0f1e35;
-    padding: 9px 8px;
-    font-size: 11px; font-weight: 700;
-    color: var(--accent);
-    border: 1px solid var(--border);
-    white-space: nowrap;
-  }
-  .week-table td {
-    border: 1px solid rgba(30,58,95,0.5);
-    padding: 6px 8px;
-    vertical-align: top;
-    min-height: 60px;
-    background: var(--surface);
-  }
-  .week-table td:hover { background: var(--surface2); }
-  .week-table .day-col { min-width: 120px; }
-  .week-task {
-    background: var(--surface2);
-    border-left: 3px solid var(--accent2);
-    padding: 4px 7px;
-    margin-bottom: 3px;
-    border-radius: 0 3px 3px 0;
-    font-size: 11px;
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 4px;
-  }
-  .week-task.task-done { border-left-color: var(--green); opacity: .75; text-decoration: line-through; }
-  .week-task.task-urgent { border-left-color: var(--red); }
-  .week-task .task-del { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 11px; padding: 0 2px; }
-  .week-task .task-del:hover { color: var(--red); }
-  .add-task-cell {
-    display: flex; gap: 4px; margin-top: 4px;
-  }
-  .add-task-cell input {
-    flex: 1; background: var(--bg); border: 1px solid var(--border);
-    color: var(--text); padding: 3px 6px; border-radius: 3px;
-    font-size: 11px; font-family: 'Noto Sans TC', sans-serif;
-    min-width: 0;
-  }
-  .add-task-cell button {
-    background: var(--accent2); border: none; color: #fff;
-    padding: 3px 8px; border-radius: 3px; cursor: pointer; font-size: 11px;
-  }
-  .add-pump-row {
-    display: flex; gap: 8px; align-items: center; margin-bottom: 14px; flex-wrap: wrap;
-  }
-  .add-pump-row input {
-    background: var(--surface2); border: 1px solid var(--border);
-    color: var(--text); padding: 6px 10px; border-radius: 4px;
-    font-size: 12px; font-family: 'Noto Sans TC', sans-serif; width: 160px;
-  }
-
-  /* ── OVERALL PROGRESS BAR ── */
-  .overall-bar-wrap {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 6px; padding: 12px 16px; margin-bottom: 16px;
-  }
-  .overall-bar-label { font-size: 11px; color: var(--text-dim); margin-bottom: 6px; }
-  .overall-bar-bg { height: 10px; background: #1e3a5f; border-radius: 5px; overflow: hidden; }
-  .overall-bar-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--accent2), var(--accent));
-    border-radius: 5px;
-    transition: width .6s cubic-bezier(.4,0,.2,1);
-  }
-  .overall-pct { font-family: 'Share Tech Mono', monospace; font-size: 20px; color: var(--accent); font-weight: 700; margin-top: 4px; }
-
-  /* ── PRINT ── */
-  @media print {
-    .topbar, .filter-bar, .add-pump-row, .btn, .modal-overlay { display: none !important; }
-    body { background: #fff; color: #000; }
-    .page { display: block !important; }
-  }
-
-  /* scrollbar */
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  @media print { .topbar, .tab-nav, .btn, .modal-overlay { display: none !important; } }
 </style>
 </head>
 <body>
 
-<!-- TOP BAR -->
 <div class="topbar">
   <div class="topbar-left">
     <div class="logo-badge">TSMC</div>
     <div>
-      <div class="sys-title">雙模幫浦工程管理系統</div>
-      <div class="sys-sub">Dual-Mode Pump Construction Tracker</div>
+      <div class="sys-title">雙模幫浦工程管理系統 <span id="sync-status" class="sync-indicator sync-offline">● 離線</span></div>
+      <div style="font-size:10px; color:var(--text-dim);">Cloud-Based Dual-Mode Pump Tracker</div>
     </div>
   </div>
   <div class="tab-nav">
     <button class="tab-btn active" onclick="switchTab('main')">📋 幫浦進度</button>
     <button class="tab-btn" onclick="switchTab('daily')">📅 每日記事</button>
-    <button class="tab-btn" onclick="switchTab('weekly')">📆 每周工事預排</button>
+    <button class="tab-btn" onclick="switchTab('weekly')">📆 每周工事</button>
   </div>
 </div>
 
-<!-- ════════════════════ PAGE 1: MAIN TRACKER ════════════════════ -->
 <div id="page-main" class="page active">
-  <div class="sec-header">
-    <h2>幫浦施工進度總覽</h2>
-    <div class="sec-line"></div>
-    <span id="ts-display" style="font-size:11px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;"></span>
-  </div>
-
-  <!-- Summary -->
   <div class="summary-row">
-    <div class="s-card blue">
-      <div class="s-num" id="sum-total">0</div>
-      <div class="s-label">幫浦總數</div>
-    </div>
-    <div class="s-card green">
-      <div class="s-num" id="sum-done">0</div>
-      <div class="s-label">全部完成</div>
-    </div>
-    <div class="s-card yellow">
-      <div class="s-num" id="sum-wip">0</div>
-      <div class="s-label">施工中</div>
-    </div>
-    <div class="s-card red">
-      <div class="s-num" id="sum-defect">0</div>
-      <div class="s-label">有瑕疵</div>
-    </div>
-    <div class="overall-bar-wrap" style="flex:2;min-width:200px;">
-      <div class="overall-bar-label">整體完成度</div>
-      <div class="overall-bar-bg"><div class="overall-bar-fill" id="overall-fill" style="width:0%"></div></div>
-      <div class="overall-pct" id="overall-pct">0%</div>
+    <div class="s-card blue"><div class="s-num" id="sum-total">0</div><div class="s-label">幫浦總數</div></div>
+    <div class="s-card green"><div class="s-num" id="sum-done">0</div><div class="s-label">全部完成</div></div>
+    <div style="flex:2; background:var(--surface); border:1px solid var(--border); padding:12px; border-radius:6px;">
+        <div style="font-size:11px; color:var(--text-dim);">當前操作員</div>
+        <div style="font-size:18px; color:var(--accent); font-weight:700;">承睿 (系統管理員)</div>
     </div>
   </div>
 
-  <!-- Add pump + filter -->
-  <div class="add-pump-row">
-    <input type="text" id="new-pump-id" placeholder="幫浦編號 e.g. P-001" maxlength="20">
+  <div style="margin-bottom:15px; display:flex; gap:10px; align-items:center;">
+    <input type="text" id="new-pump-id" placeholder="輸入編號 (如: P-001)" style="width:200px;">
     <button class="btn btn-primary" onclick="addPump()">＋ 新增幫浦</button>
-    <div style="flex:1"></div>
-    <label>篩選狀態：</label>
-    <select id="filter-status" onchange="renderTable()">
-      <option value="all">全部</option>
-      <option value="done">全部完成</option>
-      <option value="defect">有瑕疵</option>
-      <option value="wip">施工中</option>
-      <option value="pending">未開始</option>
-    </select>
-    <label>搜尋：</label>
-    <input type="text" id="filter-search" placeholder="幫浦編號" oninput="renderTable()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:4px;font-size:12px;width:120px;">
-    <button class="btn btn-primary btn-sm" onclick="exportCSV()">⬇ 匯出CSV</button>
+    <button class="btn btn-primary" style="background:#444;" onclick="exportCSV()">⬇ 匯出報表</button>
   </div>
 
   <div class="table-wrap">
-    <table id="main-table">
+    <table>
       <thead>
         <tr>
-          <th rowspan="2" style="min-width:90px;">幫浦編號</th>
-          <th colspan="8">工項完成度</th>
-          <th rowspan="2" style="min-width:70px;">整體進度</th>
-          <th rowspan="2" style="min-width:70px;">狀態</th>
-          <th rowspan="2" style="min-width:150px;">瑕疵缺失</th>
-          <th rowspan="2" style="min-width:100px;">備註</th>
-          <th rowspan="2">操作</th>
-        </tr>
-        <tr>
-          <th class="prog-cell">定位</th>
-          <th class="prog-cell">吸入端<br>PVC配管</th>
-          <th class="prog-cell">吸入端<br>型鋼固定</th>
-          <th class="prog-cell">地面<br>披甲鎖固</th>
-          <th class="prog-cell">PP出水端<br>配管</th>
-          <th class="prog-cell">PP披甲<br>鎖固</th>
-          <th class="prog-cell">球閥<br>安裝</th>
-          <th class="prog-cell">防震軟球<br>安裝</th>
+          <th>編號</th>
+          <th>定位</th><th>PVC配管</th><th>型鋼固定</th><th>地面鎖固</th><th>PP配管</th><th>PP鎖固</th><th>球閥</th><th>防震球</th>
+          <th>進度</th>
+          <th>瑕疵缺失</th>
+          <th>操作</th>
         </tr>
       </thead>
       <tbody id="table-body"></tbody>
@@ -537,452 +139,228 @@
   </div>
 </div>
 
-<!-- ════════════════════ PAGE 2: DAILY LOG ════════════════════ -->
 <div id="page-daily" class="page">
-  <div class="sec-header">
-    <h2>每日記事</h2>
-    <div class="sec-line"></div>
-  </div>
-  <div class="date-picker-wrap">
-    <label style="font-size:12px;color:var(--text-dim);">選擇日期：</label>
-    <input type="date" id="log-date">
-    <button class="btn btn-primary btn-sm" onclick="renderDailyLogs()">查看</button>
-  </div>
-  <div class="log-form">
-    <input type="text" id="log-input" placeholder="輸入今日施工記事、問題或進度說明…" onkeydown="if(event.key==='Enter')addLog()">
-    <button class="btn btn-primary" onclick="addLog()">新增記事</button>
-  </div>
-  <div id="daily-log-list" style="margin-top:16px;"></div>
+  <h2 style="margin-bottom:15px; color:var(--accent);">每日施工記事</h2>
+  <textarea id="log-input" placeholder="輸入今日現場狀況、機具進場紀錄..." style="height:80px; margin-bottom:10px;"></textarea>
+  <button class="btn btn-primary" onclick="addLog()">發佈同步記事</button>
+  <div id="daily-log-list" style="margin-top:20px;"></div>
 </div>
 
-<!-- ════════════════════ PAGE 3: WEEKLY SCHEDULE ════════════════════ -->
 <div id="page-weekly" class="page">
-  <div class="sec-header">
-    <h2>每周工事預排</h2>
-    <div class="sec-line"></div>
-  </div>
-  <div class="week-header">
-    <div class="week-nav">
-      <button onclick="changeWeek(-1)">◀ 上週</button>
-      <div class="week-label" id="week-label"></div>
-      <button onclick="changeWeek(1)">下週 ▶</button>
-    </div>
-    <button class="btn btn-primary btn-sm" onclick="goToThisWeek()">本週</button>
-    <button class="btn btn-primary btn-sm" onclick="printWeekly()">🖨 列印週排</button>
-  </div>
-  <div class="week-table-wrap">
-    <table class="week-table" id="weekly-table"></table>
-  </div>
-</div>
-
-<!-- MODAL: Note -->
-<div class="modal-overlay" id="note-modal">
-  <div class="modal">
-    <h3>📝 編輯備註 — <span id="modal-pump-id"></span></h3>
-    <textarea id="modal-note-text" placeholder="輸入備註內容…"></textarea>
-    <div class="modal-btns">
-      <button class="btn" style="background:var(--surface2);color:var(--text-dim);" onclick="closeModal('note-modal')">取消</button>
-      <button class="btn btn-primary" onclick="saveNote()">儲存</button>
+  <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+    <h2 style="color:var(--accent);">每周工事預排</h2>
+    <div>
+        <button class="btn" onclick="changeWeek(-1)">◀ 上週</button>
+        <span id="week-label" style="margin:0 15px; font-family:'Share Tech Mono';"></span>
+        <button class="btn" onclick="changeWeek(1)">下週 ▶</button>
     </div>
   </div>
+  <table class="week-table">
+    <thead>
+        <tr><th>週一</th><th>週二</th><th>週三</th><th>週四</th><th>週五</th><th>週六</th><th>週日</th></tr>
+    </thead>
+    <tbody id="weekly-body"></tbody>
+  </table>
 </div>
 
-<!-- MODAL: Defect -->
 <div class="modal-overlay" id="defect-modal">
   <div class="modal">
-    <h3>⚠️ 新增瑕疵缺失 — <span id="defect-modal-pump-id"></span></h3>
-    <input type="text" id="defect-input" placeholder="描述缺失內容…" onkeydown="if(event.key==='Enter')saveDefect()">
-    <div class="modal-btns">
-      <button class="btn" style="background:var(--surface2);color:var(--text-dim);" onclick="closeModal('defect-modal')">取消</button>
-      <button class="btn btn-danger" onclick="saveDefect()">登記缺失</button>
+    <h3>⚠️ 登記瑕疵缺失 — <span id="modal-id"></span></h3>
+    <input type="text" id="defect-input" placeholder="描述問題 (如: PP管件滲漏)" style="margin:15px 0;">
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button class="btn" onclick="closeModal('defect-modal')">取消</button>
+        <button class="btn btn-danger" onclick="saveDefect()">確認登記</button>
     </div>
   </div>
 </div>
 
 <script>
-// ── DATA ──────────────────────────────────────────────────────────
-const ITEMS = ['定位','吸入端PVC配管','吸入端型鋼固定','地面披甲鎖固','PP出水端配管','PP披甲鎖固','球閥安裝','防震軟球安裝'];
-const ITEM_WEIGHTS = [1,1,1,1,1,1,1,1]; // equal weight
+// ── 1. FIREBASE 雲端連線配置 (承睿，請在這裡填入你的 API Key) ──────────────────
+const firebaseConfig = {
+  apiKey: "填入你的API_KEY",
+  authDomain: "你的專案.firebaseapp.com",
+  databaseURL: "https://你的專案-default-rtdb.firebaseio.com",
+  projectId: "你的專案ID",
+  storageBucket: "你的專案.appspot.com",
+  appId: "你的APP_ID"
+};
 
-let pumps = [];      // [{id, items:[bool x8], defects:[str], note:''}]
-let dailyLogs = {};  // {YYYY-MM-DD: [{ts, text}]}
-let weeklyTasks = {};// {YYYY-WNN: {Mon:[{text,done,urgent}],...}}
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
+// ── 2. 全域變數 ──────────────────────────────────────────
+let pumps = [];
+let dailyLogs = [];
+let weeklyTasks = {};
 let currentWeekOffset = 0;
 let editingPumpId = null;
+const ITEMS = ['定位','PVC配管','型鋼固定','地面鎖固','PP配管','PP鎖固','球閥','防震球'];
 
-// persist
-function save() { try { localStorage.setItem('tsmc_pumps', JSON.stringify(pumps)); localStorage.setItem('tsmc_logs', JSON.stringify(dailyLogs)); localStorage.setItem('tsmc_weekly', JSON.stringify(weeklyTasks)); } catch(e){} }
-function load() { try { pumps = JSON.parse(localStorage.getItem('tsmc_pumps')) || []; dailyLogs = JSON.parse(localStorage.getItem('tsmc_logs')) || {}; weeklyTasks = JSON.parse(localStorage.getItem('tsmc_weekly')) || {}; } catch(e){ pumps=[]; dailyLogs={}; weeklyTasks={}; } }
+// ── 3. 雲端即時監聽 (核心：只要有人動，所有人畫面都會更新) ────────────────────
+db.ref('pumps').on('value', (snap) => {
+    const data = snap.val();
+    pumps = data ? Object.values(data) : [];
+    renderTable();
+});
 
-load();
+db.ref('logs').on('value', (snap) => {
+    const data = snap.val();
+    dailyLogs = data ? Object.values(data).reverse() : [];
+    renderLogs();
+});
 
-// ── UTILS ─────────────────────────────────────────────────────────
-function getPct(pump) {
-  const done = pump.items.filter(Boolean).length;
-  return Math.round((done / ITEMS.length) * 100);
-}
-function getStatus(pump) {
-  const pct = getPct(pump);
-  if (pump.defects && pump.defects.length > 0) return 'defect';
-  if (pct === 100) return 'done';
-  if (pct > 0) return 'wip';
-  return 'pending';
-}
-function barColor(pct) {
-  if (pct === 100) return 'var(--green)';
-  if (pct >= 50) return '#44aaff';
-  return 'var(--accent2)';
-}
-function statusBadgeHTML(st) {
-  const m = { done:'<span class="status-badge badge-done">✔ 完成</span>', wip:'<span class="status-badge badge-wip">⚙ 施工中</span>', defect:'<span class="status-badge badge-defect">✘ 有瑕疵</span>', pending:'<span class="status-badge badge-pending">— 未開始</span>' };
-  return m[st] || '';
-}
-function today() { return new Date().toISOString().slice(0,10); }
-function nowTs() { return new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}); }
+db.ref('weekly').on('value', (snap) => {
+    weeklyTasks = snap.val() || {};
+    renderWeekly();
+});
 
-// ── TIMESTAMP ─────────────────────────────────────────────────────
-function tickClock() {
-  const el = document.getElementById('ts-display');
-  if (el) el.textContent = new Date().toLocaleString('zh-TW');
-}
-setInterval(tickClock, 1000); tickClock();
+// 連線診斷指示燈
+db.ref('.info/connected').on('value', (snap) => {
+    const el = document.getElementById('sync-status');
+    if (snap.val() === true) {
+        el.innerText = "● 雲端同步中"; el.className = "sync-indicator sync-online";
+    } else {
+        el.innerText = "● 離線嘗試中"; el.className = "sync-indicator sync-offline";
+    }
+});
 
-// ── TAB ───────────────────────────────────────────────────────────
-function switchTab(t) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('page-'+t).classList.add('active');
-  event.currentTarget.classList.add('active');
-  if (t==='daily') { const d=document.getElementById('log-date'); if(!d.value) d.value=today(); renderDailyLogs(); }
-  if (t==='weekly') renderWeekly();
-}
-
-// ── MAIN TABLE ────────────────────────────────────────────────────
+// ── 4. 幫浦進度功能 ──────────────────────────────────────────
 function addPump() {
-  const inp = document.getElementById('new-pump-id');
-  const id = inp.value.trim();
-  if (!id) return alert('請輸入幫浦編號');
-  if (pumps.find(p => p.id===id)) return alert('幫浦編號已存在');
-  pumps.push({ id, items: Array(8).fill(false), defects:[], note:'' });
-  inp.value='';
-  save(); renderTable();
+    const id = document.getElementById('new-pump-id').value.trim();
+    if (!id) return;
+    db.ref('pumps/' + id).set({
+        id: id, items: Array(8).fill(false), defects: [],
+        lastUpdate: new Date().toLocaleString(), operator: "承睿"
+    });
+    document.getElementById('new-pump-id').value = "";
+}
+
+function toggleItem(id, idx) {
+    const p = pumps.find(x => x.id === id);
+    p.items[idx] = !p.items[idx];
+    db.ref('pumps/' + id).update({
+        items: p.items, 
+        lastUpdate: new Date().toLocaleString(),
+        operator: "承睿"
+    });
 }
 
 function deletePump(id) {
-  if (!confirm(`確認刪除幫浦 ${id}？`)) return;
-  pumps = pumps.filter(p => p.id!==id);
-  save(); renderTable();
-}
-
-function toggleItem(pumpId, idx) {
-  const p = pumps.find(x=>x.id===pumpId);
-  if (!p) return;
-  p.items[idx] = !p.items[idx];
-  save(); renderTable();
+    if(confirm(`確定刪除 ${id}？所有裝置將同步移除。`)) db.ref('pumps/' + id).remove();
 }
 
 function renderTable() {
-  const statusFilter = document.getElementById('filter-status').value;
-  const search = document.getElementById('filter-search').value.toLowerCase();
-  const tbody = document.getElementById('table-body');
+    const tbody = document.getElementById('table-body');
+    let doneTotal = 0;
+    tbody.innerHTML = pumps.map(p => {
+        const pct = Math.round((p.items.filter(Boolean).length / 8) * 100);
+        if(pct === 100) doneTotal++;
+        
+        const boxes = p.items.map((v, i) => `
+            <td><div class="check-box ${v?'done':''}" onclick="toggleItem('${p.id}',${i})">${v?'✓':''}</div></td>
+        `).join('');
 
-  let filtered = pumps.filter(p => {
-    if (search && !p.id.toLowerCase().includes(search)) return false;
-    if (statusFilter !== 'all' && getStatus(p) !== statusFilter) return false;
-    return true;
-  });
+        const defects = (p.defects || []).map(d => `<span class="defect-tag">${d}</span>`).join('');
 
-  // summary
-  document.getElementById('sum-total').textContent = pumps.length;
-  document.getElementById('sum-done').textContent = pumps.filter(p=>getStatus(p)==='done').length;
-  document.getElementById('sum-wip').textContent = pumps.filter(p=>getStatus(p)==='wip').length;
-  document.getElementById('sum-defect').textContent = pumps.filter(p=>getStatus(p)==='defect').length;
-  const totalPct = pumps.length ? Math.round(pumps.reduce((a,p)=>a+getPct(p),0)/pumps.length) : 0;
-  document.getElementById('overall-fill').style.width = totalPct+'%';
-  document.getElementById('overall-pct').textContent = totalPct+'%';
-
-  tbody.innerHTML = filtered.map(p => {
-    const st = getStatus(p);
-    const pct = getPct(p);
-    const rowClass = st==='done'?'row-green':st==='defect'?'row-red':'';
-
-    const itemCells = ITEMS.map((item,i) => {
-      const done = p.items[i];
-      return `<td class="prog-cell">
-        <div class="check-wrap" onclick="toggleItem('${p.id}',${i})" title="點擊切換：${item}">
-          <div class="check-box ${done?'done':'empty'}">${done?'✓':''}</div>
-          <span style="font-size:10px;color:${done?'var(--green)':'var(--text-dim)'};">${done?'完成':'未做'}</span>
-        </div>
-      </td>`;
+        return `<tr>
+            <td style="color:var(--accent); font-weight:700;">${p.id}</td>
+            ${boxes}
+            <td><b style="color:${pct===100?'var(--green)':'white'}">${pct}%</b></td>
+            <td style="text-align:left;">${defects} <button class="btn btn-sm" style="color:var(--red); font-size:10px;" onclick="openDefect('${p.id}')">＋</button></td>
+            <td><button class="btn btn-danger" onclick="deletePump('${p.id}')">刪除</button></td>
+        </tr>`;
     }).join('');
-
-    const barW = pct+'%';
-    const bColor = barColor(pct);
-
-    const defectHtml = (p.defects||[]).map((d,di)=>
-      `<span class="defect-tag" title="${d}">${d.length>15?d.slice(0,14)+'…':d}<span class="del-x" onclick="removeDefect('${p.id}',${di});event.stopPropagation()">×</span></span>`
-    ).join('') + `<button class="add-defect-btn" onclick="openDefectModal('${p.id}')">＋缺失</button>`;
-
-    const noteHtml = p.note ?
-      `<div class="note-text">${escHtml(p.note)}</div><button class="note-edit-btn" onclick="openNoteModal('${p.id}')">✏ 編輯</button>` :
-      `<button class="note-edit-btn" onclick="openNoteModal('${p.id}')">＋ 新增備註</button>`;
-
-    return `<tr class="${rowClass}" id="row-${p.id}">
-      <td><div class="pump-id">${escHtml(p.id)}</div></td>
-      ${itemCells}
-      <td>
-        <div class="prog-val" style="color:${bColor}">${pct}%</div>
-        <div class="prog-bar-wrap"><div class="prog-bar" style="width:${barW};background:${bColor}"></div></div>
-        <div style="font-size:10px;color:var(--text-dim);margin-top:2px;">${p.items.filter(Boolean).length}/${ITEMS.length}</div>
-      </td>
-      <td>${statusBadgeHTML(st)}</td>
-      <td class="defect-cell">${defectHtml}</td>
-      <td class="note-cell">${noteHtml}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="deletePump('${p.id}')">刪除</button></td>
-    </tr>`;
-  }).join('');
-
-  if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="14" style="text-align:center;padding:30px;color:var(--text-dim);">— 無資料 —</td></tr>`;
-  }
+    document.getElementById('sum-total').innerText = pumps.length;
+    document.getElementById('sum-done').innerText = doneTotal;
 }
 
-function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
-
-// ── DEFECT ────────────────────────────────────────────────────────
-function openDefectModal(id) {
-  editingPumpId = id;
-  document.getElementById('defect-modal-pump-id').textContent = id;
-  document.getElementById('defect-input').value = '';
-  document.getElementById('defect-modal').classList.add('show');
-  setTimeout(()=>document.getElementById('defect-input').focus(),100);
+// ── 5. 瑕疵與記事功能 ──────────────────────────────────────────
+function openDefect(id) { 
+    editingPumpId = id; 
+    document.getElementById('modal-id').innerText = id;
+    document.getElementById('defect-modal').classList.add('show'); 
 }
+function closeModal(mid) { document.getElementById(mid).classList.remove('show'); }
 function saveDefect() {
-  const text = document.getElementById('defect-input').value.trim();
-  if (!text) return;
-  const p = pumps.find(x=>x.id===editingPumpId);
-  if (!p) return;
-  if (!p.defects) p.defects=[];
-  p.defects.push(text);
-  save(); closeModal('defect-modal'); renderTable();
-}
-function removeDefect(id, idx) {
-  const p = pumps.find(x=>x.id===id);
-  if (!p) return;
-  p.defects.splice(idx,1);
-  save(); renderTable();
+    const txt = document.getElementById('defect-input').value.trim();
+    if(!txt) return;
+    const p = pumps.find(x => x.id === editingPumpId);
+    const defs = p.defects || [];
+    defs.push(txt);
+    db.ref('pumps/' + editingPumpId).update({ defects: defs });
+    document.getElementById('defect-input').value = "";
+    closeModal('defect-modal');
 }
 
-// ── NOTE ─────────────────────────────────────────────────────────
-function openNoteModal(id) {
-  editingPumpId = id;
-  const p = pumps.find(x=>x.id===id);
-  document.getElementById('modal-pump-id').textContent = id;
-  document.getElementById('modal-note-text').value = p ? p.note||'' : '';
-  document.getElementById('note-modal').classList.add('show');
-  setTimeout(()=>document.getElementById('modal-note-text').focus(),100);
-}
-function saveNote() {
-  const p = pumps.find(x=>x.id===editingPumpId);
-  if (!p) return;
-  p.note = document.getElementById('modal-note-text').value;
-  save(); closeModal('note-modal'); renderTable();
-}
-function closeModal(id) { document.getElementById(id).classList.remove('show'); }
-
-// click outside modal to close
-document.querySelectorAll('.modal-overlay').forEach(ov=>{
-  ov.addEventListener('click', e=>{ if(e.target===ov) closeModal(ov.id); });
-});
-
-// ── DAILY LOG ────────────────────────────────────────────────────
 function addLog() {
-  const inp = document.getElementById('log-input');
-  const text = inp.value.trim();
-  if (!text) return;
-  const date = document.getElementById('log-date').value || today();
-  if (!dailyLogs[date]) dailyLogs[date]=[];
-  dailyLogs[date].push({ ts: nowTs(), text });
-  inp.value='';
-  save(); renderDailyLogs();
+    const txt = document.getElementById('log-input').value.trim();
+    if(!txt) return;
+    db.ref('logs').push({ ts: new Date().toLocaleString(), text: txt, user: "承睿" });
+    document.getElementById('log-input').value = "";
 }
-function deleteLog(date, idx) {
-  if (!dailyLogs[date]) return;
-  dailyLogs[date].splice(idx,1);
-  save(); renderDailyLogs();
-}
-function renderDailyLogs() {
-  const date = document.getElementById('log-date').value || today();
-  const logs = dailyLogs[date] || [];
-  const el = document.getElementById('daily-log-list');
-
-  // show all dates with entries in reverse, highlight selected
-  const allDates = Object.keys(dailyLogs).sort().reverse();
-
-  let html = '';
-  // Current date logs
-  html += `<div class="daily-section"><h3>📌 ${date} — ${logs.length} 筆記事</h3>`;
-  if (logs.length===0) {
-    html += `<div style="color:var(--text-dim);font-size:12px;padding:12px 0;">當日尚無記事</div>`;
-  } else {
-    logs.forEach((l,i)=>{
-      html += `<div class="log-entry">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span class="log-ts">🕐 ${l.ts}</span>
-          <button class="btn btn-sm" style="background:none;border:none;color:var(--text-dim);cursor:pointer;" onclick="deleteLog('${date}',${i})">🗑</button>
+function renderLogs() {
+    document.getElementById('daily-log-list').innerHTML = dailyLogs.map(l => `
+        <div style="background:var(--surface2); padding:10px; border-radius:4px; margin-bottom:10px; border-left:3px solid var(--accent2);">
+            <div style="font-size:10px; color:var(--text-dim);">${l.ts} - ${l.user}</div>
+            <div style="margin-top:5px;">${l.text}</div>
         </div>
-        <div class="log-text">${escHtml(l.text)}</div>
-      </div>`;
-    });
-  }
-  html += '</div>';
-
-  // Other dates
-  const otherDates = allDates.filter(d=>d!==date);
-  if (otherDates.length) {
-    html += `<div class="daily-section"><h3 style="color:var(--text-dim);">📂 歷史記事</h3>`;
-    otherDates.forEach(d=>{
-      const ls = dailyLogs[d]||[];
-      if (!ls.length) return;
-      html += `<div style="margin-bottom:10px;">
-        <div style="font-size:11px;color:var(--accent2);margin-bottom:4px;font-family:'Share Tech Mono',monospace;">${d} (${ls.length}筆)</div>`;
-      ls.forEach((l,i)=>{
-        html += `<div class="log-entry" style="border-left-color:var(--accent2);opacity:.75;">
-          <div style="display:flex;justify-content:space-between;">
-            <span class="log-ts">🕐 ${l.ts}</span>
-            <button class="btn btn-sm" style="background:none;border:none;color:var(--text-dim);cursor:pointer;" onclick="deleteLog('${d}',${i});renderDailyLogs()">🗑</button>
-          </div>
-          <div class="log-text">${escHtml(l.text)}</div>
-        </div>`;
-      });
-      html += '</div>';
-    });
-    html += '</div>';
-  }
-
-  el.innerHTML = html;
+    `).join('');
 }
 
-// ── WEEKLY ────────────────────────────────────────────────────────
-const DAYS_TW = ['星期一','星期二','星期三','星期四','星期五','星期六','星期日'];
-const DAYS_SHORT = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-
-function getWeekStart(offset) {
-  const now = new Date();
-  const day = now.getDay(); // 0=Sun
-  const diff = (day===0?-6:1-day); // Monday start
-  const mon = new Date(now);
-  mon.setDate(now.getDate() + diff + offset*7);
-  mon.setHours(0,0,0,0);
-  return mon;
-}
-function dateStr(d) { return d.toISOString().slice(0,10); }
-function getWeekKey(offset) {
-  const ws = getWeekStart(offset);
-  const yr = ws.getFullYear();
-  const startOfYear = new Date(yr,0,1);
-  const weekNo = Math.ceil((((ws-startOfYear)/86400000)+startOfYear.getDay()+1)/7);
-  return `${yr}-W${String(weekNo).padStart(2,'0')}`;
-}
-
-function changeWeek(d) { currentWeekOffset += d; renderWeekly(); }
-function goToThisWeek() { currentWeekOffset = 0; renderWeekly(); }
-
+// ── 6. 每周工事預排功能 ──────────────────────────────────────────
 function renderWeekly() {
-  const ws = getWeekStart(currentWeekOffset);
-  const we = new Date(ws); we.setDate(we.getDate()+6);
-  document.getElementById('week-label').textContent =
-    `${ws.getMonth()+1}/${ws.getDate()} – ${we.getMonth()+1}/${we.getDate()}  ${ws.getFullYear()}`;
-
-  const key = getWeekKey(currentWeekOffset);
-  if (!weeklyTasks[key]) weeklyTasks[key]={};
-
-  // Build dates for this week
-  const dates = Array.from({length:7},(_,i)=>{ const d=new Date(ws); d.setDate(ws.getDate()+i); return dateStr(d); });
-
-  // Header row: pump names + days
-  let html = '<thead><tr><th style="min-width:90px;">工項 / 幫浦</th>';
-  DAYS_TW.forEach((d,i)=>{
-    html += `<th class="day-col">${d}<br><span style="font-family:'Share Tech Mono',monospace;font-size:10px;font-weight:400;">${dates[i]}</span></th>`;
-  });
-  html += '</tr></thead><tbody>';
-
-  // Rows: one per pump, plus a general row
-  const rows = pumps.length ? pumps.map(p=>p.id) : ['(一般)'];
-  rows.forEach(rowName => {
-    html += `<tr><td style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--accent);text-align:center;">${escHtml(rowName)}</td>`;
-    dates.forEach((date,di) => {
-      const cellKey = `${rowName}__${date}`;
-      if (!weeklyTasks[key][cellKey]) weeklyTasks[key][cellKey]=[];
-      const tasks = weeklyTasks[key][cellKey];
-      const tasksHtml = tasks.map((t,ti)=>
-        `<div class="week-task ${t.done?'task-done':''} ${t.urgent?'task-urgent':''}">
-          <span onclick="toggleWeekTask('${key}','${cellKey}',${ti})" style="cursor:pointer;flex:1;text-align:left;">${escHtml(t.text)}</span>
-          <button class="task-del" onclick="deleteWeekTask('${key}','${cellKey}',${ti})" title="刪除">×</button>
-        </div>`
-      ).join('');
-      html += `<td>
-        ${tasksHtml}
-        <div class="add-task-cell">
-          <input id="wt-${key}-${di}-${escId(rowName)}" placeholder="新增預排…" onkeydown="if(event.key==='Enter')addWeekTask('${key}','${cellKey}',this.id)">
-          <button onclick="addWeekTask('${key}','${cellKey}','wt-${key}-${di}-${escId(rowName)}')">+</button>
-        </div>
-      </td>`;
-    });
-    html += '</tr>';
-  });
-
-  html += '</tbody>';
-  document.getElementById('weekly-table').innerHTML = html;
+    const body = document.getElementById('weekly-body');
+    const start = getWeekStart(currentWeekOffset);
+    document.getElementById('week-label').innerText = `${start.getMonth()+1}/${start.getDate()} 起當週`;
+    
+    let html = "<tr>";
+    for(let i=0; i<7; i++) {
+        const date = new Date(start); date.setDate(start.getDate() + i);
+        const dateKey = date.toISOString().split('T')[0];
+        const tasks = weeklyTasks[dateKey] ? Object.entries(weeklyTasks[dateKey]) : [];
+        
+        html += `<td>
+            <div style="font-size:10px; color:var(--text-dim); margin-bottom:5px;">${date.getMonth()+1}/${date.getDate()}</div>
+            ${tasks.map(([tid, t]) => `
+                <div class="task-item">${t.text} <span style="cursor:pointer" onclick="delTask('${dateKey}','${tid}')">×</span></div>
+            `).join('')}
+            <input type="text" placeholder="＋" onkeydown="if(event.key==='Enter')addTask('${dateKey}', this.value)" style="font-size:10px; padding:2px;">
+        </td>`;
+    }
+    body.innerHTML = html + "</tr>";
+}
+function addTask(dateKey, val) {
+    if(!val) return;
+    db.ref(`weekly/${dateKey}`).push({ text: val });
+}
+function delTask(dateKey, tid) { db.ref(`weekly/${dateKey}/${tid}`).remove(); }
+function changeWeek(n) { currentWeekOffset += n; renderWeekly(); }
+function getWeekStart(offset) {
+    const d = new Date(); d.setDate(d.getDate() + (offset * 7));
+    const day = d.getDay(), diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    return new Date(d.setDate(diff));
 }
 
-function escId(s){ return s.replace(/[^a-zA-Z0-9]/g,'_'); }
-
-function addWeekTask(wkey, cellKey, inputId) {
-  const inp = document.getElementById(inputId);
-  if (!inp) return;
-  const text = inp.value.trim();
-  if (!text) return;
-  if (!weeklyTasks[wkey]) weeklyTasks[wkey]={};
-  if (!weeklyTasks[wkey][cellKey]) weeklyTasks[wkey][cellKey]=[];
-  weeklyTasks[wkey][cellKey].push({ text, done:false, urgent: text.includes('!') });
-  inp.value='';
-  save(); renderWeekly();
-}
-function deleteWeekTask(wkey, cellKey, idx) {
-  weeklyTasks[wkey][cellKey].splice(idx,1);
-  save(); renderWeekly();
-}
-function toggleWeekTask(wkey, cellKey, idx) {
-  const t = weeklyTasks[wkey][cellKey][idx];
-  t.done = !t.done;
-  save(); renderWeekly();
+// ── 7. 輔助功能 ──────────────────────────────────────────
+function switchTab(t) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-' + t).classList.add('active');
+    event.target.classList.add('active');
 }
 
-function printWeekly() { window.print(); }
-
-// ── EXPORT CSV ────────────────────────────────────────────────────
 function exportCSV() {
-  const headers = ['幫浦編號',...ITEMS,'整體進度%','狀態','瑕疵缺失','備註'];
-  const rows = pumps.map(p=>[
-    p.id,
-    ...p.items.map(v=>v?'完成':'未完'),
-    getPct(p)+'%',
-    getStatus(p)==='done'?'完成':getStatus(p)==='defect'?'有瑕疵':getStatus(p)==='wip'?'施工中':'未開始',
-    (p.defects||[]).join('；'),
-    p.note||''
-  ]);
-  const csv = [headers,...rows].map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
-  const blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href=url; a.download='幫浦進度_'+today()+'.csv'; a.click();
-  URL.revokeObjectURL(url);
+    let csv = "幫浦編號,進度," + ITEMS.join(",") + "\n";
+    pumps.forEach(p => {
+        const pct = Math.round((p.items.filter(Boolean).length / 8) * 100);
+        csv += `${p.id},${pct}%,${p.items.map(v=>v?'完成':'未做').join(",")}\n`;
+    });
+    const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `TSMC_PUMP_REPORT_${new Date().toLocaleDateString()}.csv`;
+    link.click();
 }
-
-// ── INIT ─────────────────────────────────────────────────────────
-renderTable();
-document.getElementById('log-date').value = today();
 </script>
 </body>
 </html>
