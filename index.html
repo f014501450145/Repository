@@ -175,11 +175,12 @@
 </div>
 
 <script>
-// ── 1. FIREBASE 雲端連線配置 (已結合承睿的金鑰) ──────────────────
+// ── 1. FIREBASE 雲端連線配置 (承睿，我已經幫你修正好新加坡網址了) ──
 const firebaseConfig = {
   apiKey: "AIzaSyCCxBty2PNUBQnNOcYxj4__q_4vmHqLxkA",
   authDomain: "tsmc-pump-system.firebaseapp.com",
-  databaseURL: "https://tsmc-pump-system-default-rtdb.firebaseio.com",
+  // 核心修正：加上了 .asia-southeast1
+  databaseURL: "https://tsmc-pump-system-default-rtdb.asia-southeast1.firebasedatabase.app", 
   projectId: "tsmc-pump-system",
   storageBucket: "tsmc-pump-system.firebasestorage.app",
   messagingSenderId: "658342998794",
