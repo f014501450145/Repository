@@ -175,17 +175,22 @@
 </div>
 
 <script>
-// ── 1. FIREBASE 雲端連線配置 (承睿，請在這裡填入你的 API Key) ──────────────────
+// ── 1. FIREBASE 雲端連線配置 (已結合承睿的金鑰) ──────────────────
 const firebaseConfig = {
-  apiKey: "填入你的API_KEY",
-  authDomain: "你的專案.firebaseapp.com",
-  databaseURL: "https://你的專案-default-rtdb.firebaseio.com",
-  projectId: "你的專案ID",
-  storageBucket: "你的專案.appspot.com",
-  appId: "你的APP_ID"
+  apiKey: "AIzaSyCCxBty2PNUBQnNOcYxj4__q_4vmHqLxkA",
+  authDomain: "tsmc-pump-system.firebaseapp.com",
+  databaseURL: "https://tsmc-pump-system-default-rtdb.firebaseio.com",
+  projectId: "tsmc-pump-system",
+  storageBucket: "tsmc-pump-system.firebasestorage.app",
+  messagingSenderId: "658342998794",
+  appId: "1:658342998794:web:428f7040311a71c9e480f3",
+  measurementId: "G-V2ML5Z75ZV"
 };
 
-firebase.initializeApp(firebaseConfig);
+// 初始化 Firebase
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
 const db = firebase.database();
 
 // ── 2. 全域變數 ──────────────────────────────────────────
@@ -196,7 +201,7 @@ let currentWeekOffset = 0;
 let editingPumpId = null;
 const ITEMS = ['定位','PVC配管','型鋼固定','地面鎖固','PP配管','PP鎖固','球閥','防震球'];
 
-// ── 3. 雲端即時監聽 (核心：只要有人動，所有人畫面都會更新) ────────────────────
+// ── 3. 雲端即時監聽 ────────────────────
 db.ref('pumps').on('value', (snap) => {
     const data = snap.val();
     pumps = data ? Object.values(data) : [];
@@ -237,9 +242,11 @@ function addPump() {
 
 function toggleItem(id, idx) {
     const p = pumps.find(x => x.id === id);
-    p.items[idx] = !p.items[idx];
+    if(!p) return;
+    const newItems = [...p.items];
+    newItems[idx] = !newItems[idx];
     db.ref('pumps/' + id).update({
-        items: p.items, 
+        items: newItems, 
         lastUpdate: new Date().toLocaleString(),
         operator: "承睿"
     });
